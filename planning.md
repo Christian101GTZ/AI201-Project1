@@ -9,7 +9,22 @@
 
 ## Domain
 
-<!-- What domain did you choose? Why is this knowledge valuable and hard to find through official channels? -->
+**PS5 Game Discovery Guide**
+
+The PS5 Game Discovery Guide is a knowledge base that helps players decide what to play on the
+PlayStation 5 based on genre, gameplay style, and community and critic recommendations. It draws
+on editorial "best PS5 games" rankings, the official PlayStation catalog, and player discussion
+threads to answer questions such as "What's the best PS5 exclusive?", "What is a good PS5 RPG for
+a newcomer?", or "What co-op games are recommended on PS5?"
+
+This knowledge is hard to find in one place because PS5 recommendations are scattered across
+review sites, official store listings, and community forums — each using different criteria and
+formats. By combining these sources into a single searchable system, a player can compare critic
+and community opinions and get a recommendation without visiting half a dozen sites.
+
+> **Scope note:** Originally framed as an all-platform, all-genre guide. Narrowed to PS5 only to
+> keep the corpus focused and content-rich (less duplicate/overlapping content, more gradable
+> questions). The cross-platform source list is preserved in git history if scope is expanded later.
 
 ---
 
@@ -18,18 +33,34 @@
 <!-- List your specific sources: URLs, subreddit names, forum threads, or file descriptions.
      Aim for at least 10 sources that together cover different subtopics or perspectives within your domain. -->
 
-| # | Source | Description | URL or location |
-|---|--------|-------------|-----------------|
-| 1 | | | |
-| 2 | | | |
-| 3 | | | |
-| 4 | | | |
-| 5 | | | |
-| 6 | | | |
-| 7 | | | |
-| 8 | | | |
-| 9 | | | |
-| 10 | | | |
+Scope: **PS5 only.** Sources mix editorial rankings, the official catalog, and community
+discussion so the corpus has critic opinions, official descriptions, and player perspectives.
+Prefer prose-rich pages (paragraph reviews/reasoning) over bare title lists for better retrieval.
+
+The final corpus is **10 sources**, each with a collected document in `documents/`. Five are broad
+"best PS5 games" rankings (official catalog, critic aggregates, editorial top lists); five are
+genre-specific lists (RPG, horror, indie, open-world, co-op/multiplayer) that add depth for
+genre-based queries.
+
+| # | Source | Type | Document |
+|---|--------|------|----------|
+| 1 | PlayStation Official PS5 Catalog | Official catalog | `documents/playstation_ps5_catalog.md` |
+| 2 | Metacritic Best PS5 Games | Critic-score aggregate | `documents/metacritic_best_ps5_games.md` |
+| 3 | OpenCritic Best PS5 Games | Critic-score aggregate | `documents/opencritic_best_ps5_games.md` |
+| 4 | IGN Best PS5 Games (Top 25) | Editorial ranking | `documents/ign_best_ps5_games.md` |
+| 5 | Polygon 25 Best PS5 Games | Editorial ranking | `documents/polygon_best_ps5_games.md` |
+| 6 | Eneba 13 Best PS5 RPGs | Genre ranking — RPG | `documents/eneba_best_ps5_rpgs.md` |
+| 7 | Eneba 13 Best PS5 Horror Games | Genre ranking — Horror | `documents/eneba_best_ps5_horror_games.md` |
+| 8 | Digital Trends Best PS5 Indie Games | Genre ranking — Indie | `documents/digitaltrends_best_ps5_indie_games.md` |
+| 9 | TrueTrophies Best PS5 Open-World Games (Top 25) | Genre ranking — Open-World | `documents/truetrophies_best_ps5_open_world_games.md` |
+| 10 | Push Square Best PS5 Online Multiplayer Games (Top 40) | Genre ranking — Co-op/Multiplayer | `documents/pushsquare_best_ps5_online_multiplayer_games.md` |
+
+Source URLs are recorded in the header of each document file.
+
+<!-- Scope narrowed from an all-platform list to PS5; uncollected/blocked sources (GameSpot,
+     GamesRadar, TechRadar, PS Lifestyle, Reddit, GameFAQs) and the original cross-platform list
+     were dropped so the source list matches the 10 collected documents. All recoverable in git
+     history if scope is expanded. -->
 
 ---
 
@@ -71,13 +102,17 @@
      is right or wrong. "What are good dining halls?" is too vague.
      "What do students say about wait times at [dining hall name] during lunch?" is testable. -->
 
+Each question targets specific content in the corpus so a response can be judged right or wrong.
+Expected answers below are based on collected sources and will be finalized once all documents
+are ingested (Milestone 3).
+
 | # | Question | Expected answer |
 |---|----------|-----------------|
-| 1 | | |
-| 2 | | |
-| 3 | | |
-| 4 | | |
-| 5 | | |
+| 1 | What is a good co-op shooter to play on PS5? | **Helldivers 2** — a co-op shooter for up to four players fighting an alien scourge threatening Earth. (PlayStation catalog) |
+| 2 | What's a recommended story-driven action game on PS5? | **God of War Ragnarök** (Kratos and Atreus journey through the Nine Realms) or **Stellar Blade** (story-driven action in a post-apocalyptic world). |
+| 3 | I want a fun platformer on PS5 — what should I play? | **Astro Bot** — a platformer where you pilot ASTRO's Dual Speeder through varied worlds (widely cited 2024 Game of the Year). |
+| 4 | What PS5 game is best for racing fans? | **Gran Turismo 7** — a racing sim with a large collection of game modes for racers, collectors, and photographers. |
+| 5 | Which PS5 exclusive should a new owner play first, and why? | A first-party PlayStation Studios title such as **Marvel's Spider-Man 2**, **God of War Ragnarök**, or **Astro Bot** — flagship exclusives the catalog/critics highlight as showcase PS5 experiences. |
 
 ---
 
