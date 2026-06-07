@@ -73,7 +73,9 @@ Source URLs are recorded in the header of each document file.
 
 **Chunk size:** 500-600 Characters
 
-**Overlap:** 75-90 characters - protects an entry that straddles a boundary so the game isn`t orphaned.
+**Overlap:** 0 characters (originally planned 75–90).
+
+> **Updated during Milestone 3 implementation:** I dropped the overlap to 0. My chunker turned out to be *paragraph-aware* — it packs whole game entries and never splits one (the longest entry is ~450 chars, under the 600 cap), so the overlap protected nothing. Worse, slicing the last ~85 characters off the previous chunk pasted mid-word fragments (e.g. "ombat. Best story-driven…") onto the start of the next chunk, which would have added noise to the embeddings. With overlap = 0, every chunk starts cleanly at a game entry.
 
 **Reasoning:**
 I chose this strategy based on the documents I collected and a pattern I noticed: games are listed one per entry, each with a heading (name + genre + score) followed by a short description. Most entries are short — roughly 250–450 characters across the name/score/genre and description. A chunk size of 500–600 characters is ideal because it keeps a whole game entry — heading and description — together in one chunk, so a single chunk can answer score-, genre-, or description-based queries. Anything smaller (around 250) would split the description from the game name, leaving half a fact. Anything much larger (1000+) would merge multiple unrelated games into one chunk and blur the embedding, hurting retrieval precision. The 75–90 character overlap protects any entry that happens to straddle a chunk boundary.
