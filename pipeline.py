@@ -53,6 +53,13 @@ def clean_document(text: str) -> str:
     # also match newlines, so it can span the whole multi-line header.
     text = re.sub(r"^.*?\n---\n", "", text, count=1, flags=re.DOTALL)
 
+    # Remove any "## ... FAQ" section (the heading and everything until the next
+    # "##" heading or the end of the document). Discovered in Milestone 4: these
+    # FAQ blocks are written as questions ("What is the best game on PS5?"), so
+    # they matched the *structure* of our queries and outranked real game entries.
+    text = re.sub(r"\n#{2,}[^\n]*FAQ.*?(?=\n## |\Z)", "",
+                  text, flags=re.DOTALL | re.IGNORECASE)
+
     # Just-in-case cleanup: if any leftover HTML codes ever appear, turn them
     # back into normal characters (e.g. "&amp;" should read as "&").
     text = (
@@ -69,56 +76,51 @@ def clean_document(text: str) -> str:
 
 
 # --- Chunking settings (see planning.md, Chunking Strategy section) ---------
-# CHUNK_OVERLAP is 0 on purpose: our chunker keeps whole game entries together
-# and never splits one, so repeating text between chunks wasn't needed and only
-# pasted half-words onto the next chunk. (planning.md originally said 75-90.)
-CHUNK_SIZE = 600        # the biggest a chunk should get, in characters
-CHUNK_OVERLAP = 0       # how many characters to repeat between chunks (0 = none)
+# Strategy: ONE GAME PER CHUNK. Each game entry is already its own paragraph
+# (blank-line separated), so we make each entry its own chunk and do NOT pack
+# several together. We learned this in Milestone 4: packing multiple games into
+# one chunk blurred their embeddings (e.g. Helldivers 2's "co-op shooter" signal
+# was averaged away among 11 other games and ranked #26). One game per chunk
+# gives each game a sharp, undiluted embedding so specific queries match it.
+MIN_CHUNK_LEN = 120      # skip tiny scraps (e.g. an orphan section heading alone)
 
 
-def chunk_text(text: str, chunk_size: int = CHUNK_SIZE,
-               overlap: int = CHUNK_OVERLAP) -> list[str]:
-    """JOB 3 — Cut one cleaned document into small chunks (~one game each).
+def chunk_text(text: str, min_chunk_len: int = MIN_CHUNK_LEN) -> list[str]:
+    """JOB 3 — Cut one cleaned document into chunks of one game entry each.
 
-    Each game entry is its own paragraph (separated by a blank line). We add
-    whole entries to a chunk until it would get bigger than `chunk_size`, then
-    we start a new chunk. This keeps each game's name + description together.
+    Each game entry is its own paragraph (separated by a blank line), so we
+    simply treat every paragraph as one chunk. Two small tidy-ups:
+      - An orphan section heading on its own (e.g. "## Unmissable Games" with
+        no description) is attached to the next entry instead of becoming a
+        meaningless tiny chunk.
+      - Anything still shorter than min_chunk_len characters is dropped.
     """
-    # Split the text on blank lines into paragraphs (= game entries),
-    # dropping any empty ones and trimming stray spaces.
+    # Split on blank lines into paragraphs (= game entries), dropping empties.
     paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
 
-    chunks: list[str] = []      # finished chunks go here
-    current = ""                # the chunk we are currently building up
+    chunks: list[str] = []
+    pending_heading = ""        # holds an orphan "## Heading" line to attach next
 
-    for para in paragraphs:     # go through the game entries one at a time
-        # Edge case: if a single entry is somehow bigger than the whole chunk
-        # size, give it its own chunk so we never lose it.
-        if len(para) > chunk_size:
-            if current:                 # if we were mid-chunk,
-                chunks.append(current)  # save what we had so far
-                current = ""            # and reset
-            chunks.append(para)         # the oversized entry becomes its own chunk
-            continue                    # move on to the next entry
+    for para in paragraphs:
+        # Is this paragraph ONLY a markdown heading (one line starting with #)?
+        # If so, hold it and prepend it to the next real entry for context.
+        if para.startswith("#") and "\n" not in para:
+            pending_heading = para
+            continue
 
-        # Normal case: would adding this entry push the current chunk over the
-        # size limit? (the "+ 2" accounts for the blank line we put between entries)
-        if current and len(current) + 2 + len(para) > chunk_size:
-            chunks.append(current)      # the current chunk is full -> save it
-            # Optionally carry the last `overlap` characters into the next chunk.
-            # The guard avoids a Python trap: current[-0:] would return the WHOLE
-            # string, so when overlap is 0 we carry nothing.
-            carry = current[-overlap:] if overlap > 0 else ""
-            current = f"{carry}\n\n{para}" if carry else para  # start the new chunk
-        else:
-            # There's still room -> add this entry to the current chunk.
-            # (If current is empty, just start it with this entry.)
-            current = f"{current}\n\n{para}" if current else para
+        # Attach any held heading to the front of this entry, then reset it.
+        if pending_heading:
+            para = f"{pending_heading}\n{para}"
+            pending_heading = ""
 
-    if current:                 # after the loop, save the last partly-filled chunk
-        chunks.append(current)
+        chunks.append(para)     # one game entry = one chunk
 
-    return chunks               # hand back the list of chunks for this document
+    # If a heading was left dangling at the very end, keep it rather than lose it.
+    if pending_heading:
+        chunks.append(pending_heading)
+
+    # Drop any chunk too short to carry real meaning.
+    return [c for c in chunks if len(c) >= min_chunk_len]
 
 
 def build_chunks(documents_dir: Path = DOCUMENTS_DIR) -> list[dict]:
