@@ -19,6 +19,20 @@ client = Groq(
 MODEL_NAME = "llama-3.3-70b-versatile"
 
 
+SOURCE_LABELS = {
+    "digitaltrends_best_ps5_indie_games.md": "Digital Trends — Best PS5 Indie Games",
+    "eneba_best_ps5_horror_games.md": "Eneba — Best PS5 Horror Games",
+    "eneba_best_ps5_rpgs.md": "Eneba — Best PS5 RPGs",
+    "ign_best_ps5_games.md": "IGN — Best PS5 Games",
+    "metacritic_best_ps5_games.md": "Metacritic — Best PS5 Games",
+    "opencritic_best_ps5_games.md": "OpenCritic — Best PS5 Games",
+    "playstation_ps5_catalog.md": "PlayStation — Official PS5 Catalog",
+    "polygon_best_ps5_games.md": "Polygon — Best PS5 Games",
+    "pushsquare_best_ps5_online_multiplayer_games.md": "Push Square — Best PS5 Online Multiplayer Games",
+    "truetrophies_best_ps5_open_world_games.md": "TrueTrophies — Best PS5 Open-World Games",
+}
+
+
 def ask(question: str) -> dict:
     """
     Retrieve relevant chunks and generate a grounded answer.
@@ -30,10 +44,13 @@ def ask(question: str) -> dict:
     sources = []
 
     for hit in hits:
+        clean_source = SOURCE_LABELS.get(hit["source"], hit["source"])
+
         context_parts.append(
-            f"[SOURCE: {hit['source']}]\n{hit['text']}"
+            f"[SOURCE: {clean_source}]\n{hit['text']}"
         )
-        sources.append(hit["source"])
+
+        sources.append(clean_source)
 
     context = "\n\n".join(context_parts)
 
@@ -47,11 +64,11 @@ Rules:
 2. Do not guess.
 3. If the documents do not contain enough information, reply exactly:
    "I don't have enough information on that."
-4. Every recommendation must mention the source filename in the sentence.
+4. Every recommendation must mention the source name in the sentence.
 5. Keep answers concise and factual.
 
 Example format:
-"Helldivers 2 is a good co-op shooter because the retrieved Polygon source describes it as a co-op third-person shooter for a squad of pals. Source: polygon_best_ps5_games.md"
+"Helldivers 2 is a good co-op shooter because Polygon — Best PS5 Games describes it as a co-op third-person shooter for a squad of pals. Source: Polygon — Best PS5 Games"
 """
 
     user_prompt = f"""

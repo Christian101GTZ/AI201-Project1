@@ -1,162 +1,163 @@
 # The Unofficial Guide — Project 1
 
-> **How to use this template:**
-> Complete each section *after* you've built and tested the corresponding part of your system.
-> Do not write placeholder text — if a section isn't done yet, leave it blank and come back.
-> Every section below is required for submission. One-liners will not receive full credit.
-
----
-
 ## Domain
 
-<!-- What topic or category of knowledge does your system cover?
-     Why is this knowledge valuable, and why is it hard to find through official channels?
-     Example: "Student reviews of CS professors at [university] — useful because official
-     course descriptions don't reflect teaching style, exam difficulty, or workload." -->
+My system covers PS5 game discovery and recommendation. The goal is to help users find games based on genres, play styles, and preferences such as co-op shooters, RPGs, platformers, horror games, indie games, multiplayer games, and open-world games.
+
+This knowledge is valuable because information about PS5 games is spread across many different websites. A player often has to search multiple sources such as IGN, Polygon, OpenCritic, Metacritic, PlayStation's official catalog, and genre-specific recommendation lists to find games that match their interests.
+
+Official store pages provide descriptions and screenshots but do not aggregate critic opinions, rankings, genre recommendations, or comparisons across multiple sources. My system combines these sources into a single retrieval-augmented generation (RAG) application that answers questions using collected documents.
 
 ---
 
 ## Document Sources
 
-<!-- List every source you collected documents from.
-     Be specific: include URLs, subreddit names, forum thread titles, or file names.
-     Aim for variety — sources that together cover different subtopics or perspectives. -->
-
-| # | Source | Type | URL or file path |
-|---|--------|------|-----------------|
-| 1 | | | |
-| 2 | | | |
-| 3 | | | |
-| 4 | | | |
-| 5 | | | |
-| 6 | | | |
-| 7 | | | |
-| 8 | | | |
-| 9 | | | |
-| 10 | | | |
+| #  | Source                                          | Type                     | URL or file path                                           |
+| -- | ----------------------------------------------- | ------------------------ | ---------------------------------------------------------- |
+| 1  | Digital Trends — Best PS5 Indie Games           | Editorial Ranking        | https://www.digitaltrends.com/gaming/best-ps5-indie-games/ |
+| 2  | Eneba — Best PS5 Horror Games                   | Genre Guide              | https://www.eneba.com/hub/games/best-ps5-horror-games/     |
+| 3  | Eneba — Best PS5 RPGs                           | Genre Guide              | https://www.eneba.com/hub/games/best-ps5-rpgs/             |
+| 4  | IGN — Best PS5 Games                            | Editorial Ranking        | https://www.ign.com/articles/best-ps5-games                |
+| 5  | Metacritic — Best PS5 Games                     | Critic Aggregate Ranking | https://www.metacritic.com                                 |
+| 6  | OpenCritic — Best PS5 Games                     | Critic Aggregate Ranking | https://opencritic.com                                     |
+| 7  | PlayStation PS5 Catalog                         | Official Catalog         | https://www.playstation.com                                |
+| 8  | Polygon — Best PS5 Games                        | Editorial Ranking        | https://www.polygon.com                                    |
+| 9  | Push Square — Best PS5 Online Multiplayer Games | Genre Guide              | https://www.pushsquare.com                                 |
+| 10 | TrueTrophies — Best PS5 Open World Games        | Genre Guide              | https://www.truetrophies.com                               |
 
 ---
 
 ## Chunking Strategy
 
-<!-- Describe your chunking approach with enough specificity that someone else could reproduce it.
-     Include:
-     - Chunk size (characters or tokens) and why that size fits your documents
-     - Overlap size and why (or why not) you used overlap
-     - Any preprocessing you did before chunking (e.g., stripping HTML, removing headers)
-     - What your final chunk count was across all documents -->
+**Chunk size:** One game entry per chunk, typically ranging from approximately 120–540 characters.
 
-**Chunk size:**
-
-**Overlap:**
+**Overlap:** No overlap was used.
 
 **Why these choices fit your documents:**
 
-**Final chunk count:**
+The original plan was to use paragraph-based chunking around 500–600 characters. During Milestone 4 retrieval testing, I discovered that chunks containing multiple games reduced retrieval quality because the embedding represented several games at once.
+
+For example, a co-op shooter query could retrieve a chunk that also contained unrelated games. To improve retrieval performance, I changed the strategy to one game per chunk. Each game's description became its own chunk, allowing the embedding model to represent that game more accurately.
+
+Before chunking, I removed document headers, source metadata, FAQ sections, and cleaned formatting artifacts. I also normalized spacing and removed unnecessary boilerplate text.
+
+**Final chunk count:** 212 chunks across 10 source documents.
 
 ---
 
 ## Embedding Model
 
-<!-- Name the embedding model you used and explain your choice.
-     Then answer: if you were deploying this system for real users and cost wasn't a constraint,
-     what tradeoffs would you weigh in choosing a different model?
-     Consider: context length limits, multilingual support, accuracy on domain-specific text,
-     latency, and local vs. API-hosted. -->
-
 **Model used:**
 
+all-MiniLM-L6-v2 from Sentence Transformers.
+
 **Production tradeoff reflection:**
+
+I selected all-MiniLM-L6-v2 because it runs locally, requires no API key, is lightweight, and performs well on semantic retrieval tasks. It was a practical choice for a class project because it is fast and easy to deploy.
+
+For a production system, I would evaluate larger embedding models that provide stronger semantic understanding and improved retrieval accuracy. Factors I would consider include multilingual support, latency, hosting costs, domain-specific performance, and context length limitations. A larger model would likely improve retrieval quality but increase computational costs and response times.
 
 ---
 
 ## Grounded Generation
 
-<!-- Explain how your system enforces grounding — how does it prevent the LLM from answering
-     beyond the retrieved documents?
-     Describe both your system prompt (what instruction you gave the model) and any structural
-     choices (e.g., how you formatted the context, whether you filtered low-relevance chunks).
-     Do not just say "I told it to use the documents" — show the actual instruction or explain
-     the mechanism. -->
-
 **System prompt grounding instruction:**
 
+The system prompt explicitly instructs the language model to answer only from retrieved documents. The model is told:
+
+* Do not use outside knowledge.
+* Do not guess.
+* If the documents do not contain enough information, respond with: "I don't have enough information on that."
+* Every recommendation must reference the retrieved sources.
+
+Retrieved chunks are inserted directly into the prompt and provided as the only context available to the model.
+
 **How source attribution is surfaced in the response:**
+
+Each retrieved chunk contains source metadata. The application programmatically collects source filenames and displays them separately from the generated answer. This guarantees attribution even if the language model forgets to mention a source in its generated response.
 
 ---
 
 ## Evaluation Report
 
-<!-- Run your 5 test questions from planning.md through your system and record the results.
-     Be honest — a partially accurate or inaccurate result that you explain well is more
-     valuable than a suspiciously perfect result. -->
+| # | Question                                              | Expected answer                      | System response (summarized)                                                           | Retrieval quality | Response accuracy  |
+| - | ----------------------------------------------------- | ------------------------------------ | -------------------------------------------------------------------------------------- | ----------------- | ------------------ |
+| 1 | What is a good co-op shooter to play on PS5?          | Helldivers 2 or Borderlands 3        | Recommended Helldivers 2 and Borderlands 3 with supporting source citations.           | Relevant          | Accurate           |
+| 2 | What's a recommended story-driven action game on PS5? | God of War Ragnarök or Stellar Blade | Recommended The Last of Us Part I and God of War Ragnarök using retrieved IGN content. | Relevant          | Partially Accurate |
+| 3 | I want a fun platformer on PS5 — what should I play?  | Astro Bot                            | Recommended Astro Bot and cited multiple sources.                                      | Relevant          | Accurate           |
+| 4 | What PS5 game is best for racing fans?                | Gran Turismo 7                       | Recommended Forza Horizon 5 based on retrieved source content.                         | Relevant          | Partially Accurate |
+| 5 | Which indie game on PS5 has the highest critic score? | Disco Elysium: The Final Cut (95%)   | Correctly identified Disco Elysium: The Final Cut as the highest-rated indie game.     | Relevant          | Accurate           |
 
-| # | Question | Expected answer | System response (summarized) | Retrieval quality | Response accuracy |
-|---|----------|-----------------|------------------------------|-------------------|-------------------|
-| 1 | | | | | |
-| 2 | | | | | |
-| 3 | | | | | |
-| 4 | | | | | |
-| 5 | | | | | |
+**Retrieval quality:** Relevant / Partially relevant / Off-target
 
-**Retrieval quality:** Relevant / Partially relevant / Off-target  
 **Response accuracy:** Accurate / Partially accurate / Inaccurate
 
 ---
 
 ## Failure Case Analysis
 
-<!-- Identify at least one question where retrieval or generation did not work as expected.
-     Write a specific explanation of *why* it failed, tied to a part of the pipeline.
-
-     "The answer was wrong" is not an explanation.
-
-     "The relevant information was split across a chunk boundary, so retrieval returned
-     only half the context — the model didn't have enough to answer correctly" is an explanation.
-
-     "The embedding model treated the professor's nickname as out-of-vocabulary and returned
-     results from an unrelated review" is an explanation. -->
-
 **Question that failed:**
+
+What PS5 game is best for racing fans?
 
 **What the system returned:**
 
+The system recommended Forza Horizon 5 instead of Gran Turismo 7.
+
 **Root cause (tied to a specific pipeline stage):**
 
+This was not a retrieval failure. The retrieval system successfully returned racing-game chunks. However, the corpus contained multiple valid recommendations from different sources. Polygon strongly favored Forza Horizon 5 while other sources highlighted Gran Turismo 7. The language model generated an answer based on the retrieved context rather than the expected answer.
+
 **What you would change to fix it:**
+
+I would aggregate critic scores and rankings across multiple sources and add score-based reranking. This would allow the system to weigh consensus recommendations rather than relying solely on semantic similarity.
 
 ---
 
 ## Spec Reflection
 
-<!-- Reflect on how planning.md shaped your implementation.
-     Answer both questions with at least 2–3 sentences each. -->
-
 **One way the spec helped you during implementation:**
 
+The planning document forced me to think about chunking, retrieval, evaluation questions, and system architecture before writing code. This made development more structured and helped me identify retrieval issues earlier because I already knew how the system was supposed to behave.
+
+The evaluation plan was especially useful because it gave me concrete questions to test throughout development. Those tests helped reveal weaknesses in chunking and retrieval quality.
+
 **One way your implementation diverged from the spec, and why:**
+
+My original plan called for paragraph-based chunks of approximately 500–600 characters. During retrieval testing, I discovered that chunks containing multiple games reduced retrieval quality because important game-specific information became diluted.
+
+I changed the implementation to one-game-per-chunk chunking. This diverged from the original plan but produced significantly better retrieval results for recommendation queries.
 
 ---
 
 ## AI Usage
 
-<!-- Describe at least 2 specific instances where you used an AI tool during this project.
-     For each: what did you give the AI as input, what did it produce, and what did you
-     change, override, or direct differently?
+### Instance 1
 
-     "I used Claude to help me code" is not sufficient.
-     "I gave Claude my Chunking Strategy section from planning.md and asked it to implement
-     chunk_text(). It returned a function using a fixed character split. I overrode the
-     chunk size from 500 to 200 because my documents are short reviews, not long guides." -->
+* **What I gave the AI:** My planning.md chunking strategy, document structure, and Milestone 3 requirements.
+* **What it produced:** An initial chunking pipeline that loaded documents, cleaned text, and created chunks.
+* **What I changed or overrode:** During retrieval testing I discovered that multi-game chunks reduced retrieval quality. I modified the chunking strategy to use one game per chunk and updated the cleaning logic to remove FAQ sections and metadata.
 
-**Instance 1**
+### Instance 2
 
-- *What I gave the AI:*
-- *What it produced:*
-- *What I changed or overrode:*
+* **What I gave the AI:** My retrieval architecture, embedding model choice, ChromaDB requirements, and Milestone 4 instructions.
+* **What it produced:** Embedding and retrieval code using all-MiniLM-L6-v2 and ChromaDB.
+* **What I changed or overrode:** I added source-aware retrieval improvements, custom source tags, reranking logic, grounding instructions, and stronger source attribution to improve retrieval quality and reduce hallucinations during generation.
 
-**Instance 2**
+## Demo Video
 
-- *What I gave the AI:*
-- *What it produced:*
-- *What I changed or overrode:*
+This video demonstrates the complete PS5 Game Discovery Guide RAG system, including:
+
+- Document ingestion and preprocessing
+- One-game-per-chunk chunking strategy
+- Embedding generation using all-MiniLM-L6-v2
+- ChromaDB vector storage and retrieval
+- Grounded generation using Groq's Llama 3.3 70B model
+- Source attribution
+- Gradio user interface
+- Evaluation results
+- Failure case analysis
+
+Demo Video:
+
+https://www.loom.com/share/bb56bae3ee424c14a9634c415800b026

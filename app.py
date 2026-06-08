@@ -10,7 +10,10 @@ def handle_query(question: str):
     result = ask(question)
 
     answer = result["answer"]
-    sources = "\n".join(f"• {source}" for source in result["sources"])
+    sources = "\n".join(
+        f"• {source}"
+        for source in result["sources"]
+    )
 
     return answer, sources
 
